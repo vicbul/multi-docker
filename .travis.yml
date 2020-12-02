@@ -1,0 +1,22 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t vbulnes/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true vbulnes/react-test npm test -- --coverage
+
+after_success:
+  - docker build -t vbulnes/multi-client ./client
+  - docker build -t vbulnes/multi-nginx ./nginx
+  - docker build -t vbulnes/multi-server ./server
+  - docker build -t vbulnes/multi-worker ./worker
+  # Login into docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take images and push to docker HUB
+  - docker push vbulnes/multi-client
+  - docker push vbulnes/multi-nginx
+  - docker push vbulnes/multi-server
+  - docker push vbulnes/multi-worker
